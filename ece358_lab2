@@ -1,3 +1,9 @@
+import pdb
+import numpy
+import math
+import heapq as heap
+from collections import deque
+
 #variable declaration
 N = 10 			#N: the number of computers connected to the LAN (variable)
 A = 5 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
@@ -9,22 +15,23 @@ simTime = 1 #in seconds
 average = 0
 packetperSecond = 0
 totalNumberOfPacket = 0
+collisionsDetection = 0
+collisionCount = 0
 
-# backoffCounter = {}
-# backoffTimer = {}
+lastPacketTime = 0
+currentPacket = 0
+lastSender = 0
+currentSender = 0
+
+
 # Presistency = {}
 LANUsers = {}
 packetHeap = []
-
-import pdb
-import numpy
-import math
-import heapq as heap
-from collections import deque
+collisionList = []
 
 
 def poissonDistribution():
-	packetperSecond = float (numpy.random.poisson(5))
+	packetperSecond = float (numpy.random.poisson(A))
 	if (packetperSecond == 0):
 		return 0
 	else:
@@ -35,24 +42,8 @@ class users:
 		self.userID = userID
 		self.queue = deque ()
 		self.lastPacket = lastPacket
-		self.nextPackettime = poissonDistribution
+		self.backoffCounter = 0
 		self.mediumCountdown = 96/W*timeFactor
-
-	def insertPacket (self):
-		self.queue.append(1)
-		self.nextPackettime = poissonDistribution
-
-	def servicePacket (self):
-		self.queue.pop()
-		self.busyTime = L/W  #50*10/(2*pow(10,8))
-		for x in (0, len(LANUsers)):
-			LANUsers[x.userID][abs(self.userID-x.userID)*10/(2*pow(10,8))*timeFactor] = self.busyTime
-
-	def timeTillnextpacket(self):
-		if (self.nextPackettime >=1):
-			self.nextPackettime -= 1
-		else:
-			self.insertPacket()
 
 class packet:
 	def __init__ (self, packetTime, user):
@@ -63,8 +54,12 @@ class packet:
 	def __repr__(self):
 		return str(self.packetTime) + " " + str(self.user)
 
-def resolveCollision (currentPacketTime, currentPacketUser, lastPacketTime, lastSender):
-	print currentPacketTime, " " ,lastPacketTime
+#Resolving collisions
+def resolveCollision (collisions):
+	pdb.set_trace()
+	#currentSender
+
+	
 
 
 #Initializing the users
@@ -83,21 +78,27 @@ for x in range (0, len(LANUsers)):
 			insertPacket = packet (LANUsers[x].lastPacket, x)
 			heap.heappush(packetHeap, insertPacket)
 			totalNumberOfPacket +=1
-			print insertPacket.packetTime, insertPacket.user
+			#print insertPacket.packetTime, insertPacket.user
 
 
-print str(packetHeap)
+#print str(packetHeap)
 
 # Calculating possible collisions
-lastPacketTime = 0
-currentPacket = 0
-lastSender = 0
-currentSender = 0
 while (totalNumberOfPacket > 0):
 	currentPacket = heap.heappop(packetHeap)
 	totalNumberOfPacket -= 1
-	if ((currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W+ 96*timeFactor/W + 50*10/(2*pow(10,8)))):
-		resolveCollision(currentPacket.packetTime, currentPacket.user, lastPacketTime, lastSender)
+	if ((currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
+		if(collisionCount == 0):
+			previousPacket = packet (lastPacketTime, lastSender)
+			collisionList.append(previousPacket)
+		collisionList.append(currentPacket)
+		print (str(currentPacket.packetTime) + " " + str(lastPacketTime))
+		collisionCount += 1
+		collisionsDetection = 1
+	elif (((currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionsDetection == 1):
+		resolveCollision(collisionList)
+		collisionCount = 0
+		collisionsDetection = 0
 	lastPacketTime = currentPacket.packetTime
 	lastSender = currentPacket.user
 
