@@ -1,0 +1,113 @@
+#variable declaration
+N = 10 			#N: the number of computers connected to the LAN (variable)
+A = 5 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
+W = 1000000		#The speed of the LAN (fixed)
+L = 1500*8   	#Packet length (fixed)
+#P 				#Persistence parameter for P-persistent CSMA protocols
+timeFactor = 1000000 #Time scale 
+simTime = 1 #in seconds
+average = 0
+packetperSecond = 0
+totalNumberOfPacket = 0
+
+# backoffCounter = {}
+# backoffTimer = {}
+# Presistency = {}
+LANUsers = {}
+packetHeap = []
+
+import pdb
+import numpy
+import math
+import heapq as heap
+from collections import deque
+
+
+def poissonDistribution():
+	packetperSecond = float (numpy.random.poisson(5))
+	if (packetperSecond == 0):
+		return 0
+	else:
+		return 1/packetperSecond*timeFactor
+
+class users:
+	def __init__(self, userID, lastPacket= 0):
+		self.userID = userID
+		self.queue = deque ()
+		self.lastPacket = lastPacket
+		self.nextPackettime = poissonDistribution
+		self.mediumCountdown = 96/W*timeFactor
+
+	def insertPacket (self):
+		self.queue.append(1)
+		self.nextPackettime = poissonDistribution
+
+	def servicePacket (self):
+		self.queue.pop()
+		self.busyTime = L/W  #50*10/(2*pow(10,8))
+		for x in (0, len(LANUsers)):
+			LANUsers[x.userID][abs(self.userID-x.userID)*10/(2*pow(10,8))*timeFactor] = self.busyTime
+
+	def timeTillnextpacket(self):
+		if (self.nextPackettime >=1):
+			self.nextPackettime -= 1
+		else:
+			self.insertPacket()
+
+class packet:
+	def __init__ (self, packetTime, user):
+		self.packetTime = packetTime
+		self.user = user
+	def __lt__ (self, other):
+		return self.packetTime < other.packetTime
+	def __repr__(self):
+		return str(self.packetTime) + " " + str(self.user)
+
+def resolveCollision (currentPacketTime, currentPacketUser, lastPacketTime, lastSender):
+	print currentPacketTime, " " ,lastPacketTime
+
+
+#Initializing the users
+for x in range (0, 5):
+	LANUsers[x] = users (x)
+
+#Calculating when the packets from upper layers will arrive
+maxPacketPerUser = 0
+condition = len(LANUsers)
+for x in range (0, len(LANUsers)):
+	condition = len(LANUsers)
+	while LANUsers[x].lastPacket < (simTime * timeFactor):
+		timeBuffer = poissonDistribution()
+		LANUsers[x].lastPacket += timeBuffer
+		if (LANUsers[x].lastPacket < (simTime * timeFactor)):
+			insertPacket = packet (LANUsers[x].lastPacket, x)
+			heap.heappush(packetHeap, insertPacket)
+			totalNumberOfPacket +=1
+			print insertPacket.packetTime, insertPacket.user
+
+
+print str(packetHeap)
+
+# Calculating possible collisions
+lastPacketTime = 0
+currentPacket = 0
+lastSender = 0
+currentSender = 0
+while (totalNumberOfPacket > 0):
+	currentPacket = heap.heappop(packetHeap)
+	totalNumberOfPacket -= 1
+	if ((currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W+ 96*timeFactor/W + 50*10/(2*pow(10,8)))):
+		resolveCollision(currentPacket.packetTime, currentPacket.user, lastPacketTime, lastSender)
+	lastPacketTime = currentPacket.packetTime
+	lastSender = currentPacket.user
+
+
+
+
+
+
+
+
+
+
+
