@@ -1,6 +1,7 @@
 import pdb
 import numpy
 import math
+import random
 import heapq as heap
 from collections import deque
 
@@ -15,8 +16,9 @@ simTime = 1 #in seconds
 average = 0
 packetperSecond = 0
 totalNumberOfPacket = 0
-collisionsDetection = 0
 collisionCount = 0
+kMax = 10
+randomBackoffperiod = 0
 
 lastPacketTime = 0
 currentPacket = 0
@@ -55,9 +57,16 @@ class packet:
 		return str(self.packetTime) + " " + str(self.user)
 
 #Resolving collisions
-def resolveCollision (collisions):
-	pdb.set_trace()
-	#currentSender
+def resolveCollision (collisions, counter):
+	for x in range (0, counter+1):
+		if(LANUsers[collisions[x].user].backoffCounter < kMax):
+			LANUsers[collisions[x].user].backoffCounter += 1
+			randomBackoffperiod = random.uniform(0, pow(2,LANUsers[collisions[x].user].backoffCounter)-1)*timeFactor
+			delayPacket = packet (collisions[x].packetTime + randomBackoffperiod  ,LANUsers[collisions[x].user].userID)
+			print "Random backoff for "+ str(LANUsers[collisions[x].user].userID) +" "+ str(randomBackoffperiod) + " new packet time " + str(delayPacket.packetTime)
+			heap.heappush(packetHeap, delayPacket)
+		else: 
+			print "User: {0} has failed to send a packet at {1}".format (collisions.user, collisions.packetTime)
 
 	
 
@@ -88,19 +97,25 @@ while (totalNumberOfPacket > 0):
 	currentPacket = heap.heappop(packetHeap)
 	totalNumberOfPacket -= 1
 	if ((currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
-		if(collisionCount == 0):
-			previousPacket = packet (lastPacketTime, lastSender)
-			collisionList.append(previousPacket)
-		collisionList.append(currentPacket)
-		print (str(currentPacket.packetTime) + " " + str(lastPacketTime))
+		#if the conflicting packets are between the same user then delay the 2nd packet by the minimal busy time
+		if(currentPacket.user == lastSender):
+			delayCurrentPacket = (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8))), currentPacket.user)
+			heap.heappush(packetHeap, delayCurrentPacket)
+		#if the conflicting packets are between different users
+		else:
+			if(collisionCount == 0):
+				previousPacket = packet (lastPacketTime, lastSender)
+				collisionList.append(previousPacket)
+			collisionList.append(currentPacket)
+		print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 		collisionCount += 1
-		collisionsDetection = 1
-	elif (((currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionsDetection == 1):
-		resolveCollision(collisionList)
+	elif (((currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionCount > 0):
+		print ("Collision occured "+ str(collisionCount))
+		resolveCollision(collisionList, collisionCount)
 		collisionCount = 0
-		collisionsDetection = 0
-	lastPacketTime = currentPacket.packetTime
-	lastSender = currentPacket.user
+	if (currentPacket.user != lastSender):
+		lastPacketTime = currentPacket.packetTime
+		lastSender = currentPacket.user
 
 
 
