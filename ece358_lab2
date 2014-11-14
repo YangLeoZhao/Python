@@ -61,15 +61,13 @@ def resolveCollision (collisions, counter):
 	for x in range (0, counter+1):
 		if(LANUsers[collisions[0].user].backoffCounter < kMax):
 			LANUsers[collisions[0].user].backoffCounter += 1
-			randomBackoffperiod = random.uniform(0, pow(2,LANUsers[collisions[0].user].backoffCounter)-1)*timeFactor
+			randomBackoffperiod = random.uniform(0, pow(2,LANUsers[collisions[0].user].backoffCounter)-1)*timeFactor*512/W
 			delayPacket = packet (collisions[0].packetTime + randomBackoffperiod, LANUsers[collisions[0].user].userID)
 			print "Random backoff for "+ str(LANUsers[collisions[0].user].userID) +" "+ str(randomBackoffperiod) + " new packet time " + str(delayPacket.packetTime)
 			heap.heappush(packetHeap, delayPacket)
-		else: 
+		else:
 			print "User: {0} has failed to send a packet at {1}".format (collisions.user, collisions.packetTime)
 		collisions.pop(0)
-
-	
 
 
 #Initializing the users
@@ -98,7 +96,8 @@ while (totalNumberOfPacket > 0):
 	currentPacket = heap.heappop(packetHeap)
 	totalNumberOfPacket -= 1
 	#A group of collisions
-	if ((currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
+	#pdb.set_trace()
+	if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
 		#if the conflicting packets are between the same user then delay the 2nd packet by the minimal busy time
 		if(currentPacket.user == lastSender):
 			delayCurrentPacket = (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8))), currentPacket.user)
@@ -113,7 +112,7 @@ while (totalNumberOfPacket > 0):
 			collisionList.append(currentPacket)
 		print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 		collisionCount += 1
-	elif (((currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionCount > 0):
+	elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionCount > 0):
 		print ("Collision occured " + str(collisionCount))
 		resolveCollision(collisionList, collisionCount)
 		collisionCount = 0
