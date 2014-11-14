@@ -7,7 +7,7 @@ from collections import deque
 
 #variable declaration
 N = 10 			#N: the number of computers connected to the LAN (variable)
-A = 5 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
+A = 10 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
 W = 1000000		#The speed of the LAN (fixed)
 L = 1500*8   	#Packet length (fixed)
 #P 				#Persistence parameter for P-persistent CSMA protocols
@@ -51,8 +51,6 @@ class packet:
 	def __init__ (self, packetTime, user):
 		self.packetTime = packetTime
 		self.user = user
-	def __lt__ (self, other):
-		return self.packetTime < other.packetTime
 	def __repr__(self):
 		return str(self.packetTime) + " " + str(self.user)
 
@@ -66,12 +64,12 @@ def resolveCollision (collisions, counter):
 			print "Random backoff for "+ str(LANUsers[collisions[0].user].userID) +" "+ str(randomBackoffperiod) + " new packet time " + str(delayPacket.packetTime)
 			heap.heappush(packetHeap, delayPacket)
 		else:
-			print "User: {0} has failed to send a packet at {1}".format (collisions.user, collisions.packetTime)
+			print "User: {0} has failed to send a packet at {1}".format (collisions[0].user, collisions[0].packetTime)
 		collisions.pop(0)
 
 
 #Initializing the users
-for x in range (0, 5):
+for x in range (0, N):
 	LANUsers[x] = users (x)
 
 #Calculating when the packets from upper layers will arrive
@@ -110,8 +108,8 @@ while (totalNumberOfPacket > 0):
 				collisionList.append(previousPacket)
 			#pdb.set_trace()
 			collisionList.append(currentPacket)
+			collisionCount += 1
 		print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
-		collisionCount += 1
 	elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionCount > 0):
 		print ("Collision occured " + str(collisionCount))
 		resolveCollision(collisionList, collisionCount)
