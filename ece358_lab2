@@ -6,14 +6,13 @@ import heapq as heap
 from collections import deque
 
 #variable declaration
-N = 2 			#N: the number of computers connected to the LAN (variable)
-A = 2 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
+N = 20 			#N: the number of computers connected to the LAN (variable)
+A = 5 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
 W = 1000000		#The speed of the LAN (fixed)
 L = 1500*8   	#Packet length (fixed)
-#P 				#Persistence parameter for P-persistent CSMA protocols
+P = 1 			#Persistence parameter for P-persistent CSMA protocols
 timeFactor = 1000000 #Time scale 
 simTime = 1 #in seconds
-average = 0
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
@@ -85,12 +84,13 @@ for x in range (0, len(LANUsers)):
 	condition = len(LANUsers)
 	while LANUsers[x].lastPacket < (simTime * timeFactor):
 		timeBuffer = poissonDistribution()
-		LANUsers[x].lastPacket += timeBuffer
-		if (LANUsers[x].lastPacket < (simTime * timeFactor)):
-			insertPacket = packet (LANUsers[x].lastPacket, x)
-			heap.heappush(packetHeap, insertPacket)
-			heap.heapify(packetHeap)
-			totalNumberOfPacket +=1
+		if (timeBuffer != 0):
+			LANUsers[x].lastPacket += timeBuffer
+			if (LANUsers[x].lastPacket < (simTime * timeFactor)):
+				insertPacket = packet (LANUsers[x].lastPacket, x)
+				heap.heappush(packetHeap, insertPacket)
+				heap.heapify(packetHeap)
+				totalNumberOfPacket +=1
 			#print insertPacket.packetTime, insertPacket.user
 
 
@@ -101,8 +101,7 @@ while (totalNumberOfPacket > 0):
 	currentPacket = heap.heappop(packetHeap)
 	totalNumberOfPacket -= 1
 	#A group of collisions
-	#pdb.set_trace()
-	print " "+str(currentPacket.packetTime) + " " + str(currentPacket.user)
+	#print " "+str(currentPacket.packetTime) + " " + str(currentPacket.user)
 	if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
 		#if the conflicting packets are between the same user then delay the 2nd packet by the minimal busy time
 		if(currentPacket.user == lastSender):
