@@ -24,6 +24,7 @@ packetThroughPut = 0
 AggregateCollisionCount = 0
 AggregatePacketCount = 0
 AggregateErrorCount = 0
+AggregateDelayTime = 0
 
 lastPacketTime = 0
 currentPacket = 0
@@ -53,9 +54,11 @@ class users:
 		self.mediumCountdown = 96/W*timeFactor
 
 class packet:
-	def __init__ (self, packetTime, user):
+	def __init__ (self, packetTime, user, insertTime = 0, deletionTime = 0):
 		self.packetTime = packetTime
 		self.user = user
+		self.insertTime = insertTime
+		self.deletionTime = deletionTime
 
 	def __lt__ (self, other):		
 		#pdb.set_trace ()
@@ -101,7 +104,7 @@ for z in range (5,8):
 					if (timeBuffer != 0):
 						LANUsers[x].lastPacket += timeBuffer
 						if (LANUsers[x].lastPacket < (simTime * timeFactor)):
-							insertPacket = packet (LANUsers[x].lastPacket, x)
+							insertPacket = packet (LANUsers[x].lastPacket, x, LANUsers[x].lastPacket)
 							heap.heappush(packetHeap, insertPacket)
 							heap.heapify(packetHeap)
 							totalNumberOfPacket +=1
@@ -124,8 +127,7 @@ for z in range (5,8):
 				if (P == 1):
 					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentSender - lastSender)*10/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
 						#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
-						currentPacket.packetTime += random.uniform(0, pow(2,LANUsers[currentPacket.user].medium)-1)*timeFactor*512/W
-						LANUsers[currentPacket.user].medium +=1
+						currentPacket.packetTime += random.uniform(0, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
 						heap.heappush(packetHeap, currentPacket)
 						heap.heapify(packetHeap)
 					else: 
@@ -152,20 +154,26 @@ for z in range (5,8):
 							collisionCount = 0
 						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
 							LANUsers[currentPacket.user].backoffCounter = 0
-							LANUsers[currentPacket.user].medium = 0
+							currentPacket.deletionTime = currentPacket.packetTime
 							packetThroughPut += 1
+							AggregateDelayTime += currentPacket.deletionTime - currentPacket.insertTime
 						if (currentPacket.user != lastSender):
 							lastPacketTime = currentPacket.packetTime
 							lastSender = currentPacket.user
 
-			print "Packet Throughput: "+str(packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
+			print " Data packet per second: " +str(z) + " Number of users: " + str(a) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
 
 			with open ("data.txt", "a") as testfile:
-				testfile.write (str(z) + " " + str(a) + " " + str(packetThroughPut)+" "+str(AggregateCollisionCount)+" "+str(AggregatePacketCount)+ "\n")
+				testfile.write (str(z) + " " + str(a) + " " + str(packetThroughPut) + " " + str(AggregateDelayTime/packetThroughPut) + " " + str(AggregateCollisionCount) + " " + str(AggregatePacketCount)+ "\n")
 
 
 			LANUsers.clear()
 			print "User deletion done."
+
+			packetThroughPut = 0
+			AggregateCollisionCount = 0
+			AggregatePacketCount = 0
+			AggregateErrorCount = 0
 
 			while True:
 				try:
