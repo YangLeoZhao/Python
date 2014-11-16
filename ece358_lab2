@@ -202,7 +202,7 @@ for a in range (2,5):
 									else:
 										print "From different user"
 										if(collisionCount == 0):
-											previousPacket = packet (lastPacketTime, lastSender)
+											previousPacket = packet (lastPacketTime, lastSender, lastPacketCreationTime)
 											collisionList.append(previousPacket)
 										collisionList.append(currentPacket)
 										collisionCount += 1
@@ -223,6 +223,7 @@ for a in range (2,5):
 								if (currentPacket.user != lastSender):
 									lastPacketTime = currentPacket.packetTime
 									lastSender = currentPacket.user
+									lastPacketCreationTime = currentPacket.insertTime
 							else:
 								print "Probability > 0.1"
 								randomNumber = random.uniform(0.0001, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
