@@ -84,7 +84,7 @@ def resolveCollision (collisions, counter):
 #A value
 for z in range (5,6):
 	#N value
-	for a in range (1,2):
+	for a in range (5,6):
 		#each test run 5 times
 		for y in range (0,1):
 			#Initializing the users
@@ -120,7 +120,7 @@ for z in range (5,6):
 			# Calculating possible collisions
 			while (totalNumberOfPacket > 0):
 				currentPacket = heap.heappop(packetHeap)
-				if (lastPacketTime > 1):
+				if (lastPacketTime > simTime*timeFactor):
 					break
 				#Non-Persistent CSMA/CD
 				if (P == 1):
@@ -163,7 +163,7 @@ for z in range (5,6):
 							AggregateCollisionCount += collisionCount
 							collisionCount = 0
 						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
-							print "Packet successfully delivered " + str(packetThroughPut)
+							print "Packet successfully delivered"
 							LANUsers[currentPacket.user].backoffCounter = 0
 							currentPacket.deletionTime = currentPacket.packetTime
 							packetThroughPut += 1
