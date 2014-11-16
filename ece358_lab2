@@ -13,7 +13,7 @@ L = 1500*8   	#Packet length (fixed)
 global P
 P = 1 			#Persistence parameter for P-persistent CSMA protocols
 timeFactor = 1 #Time scale 
-simTime =  10 #in seconds
+simTime =  1.0 #in seconds
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
@@ -130,7 +130,7 @@ for a in range (2,5):
 				if (P == 1):
 					#pdb.set_trace()
 					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W + 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))):
-						#print ("Medium busy " + str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
+						print ("Medium busy " + str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 						#pdb.set_trace()
 						randomNumber = random.uniform(0.0001, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
 						#if (randomNumber  == 0):
@@ -159,7 +159,7 @@ for a in range (2,5):
 									collisionList.append(previousPacket)
 								collisionList.append(currentPacket)
 								collisionCount += 1
-							#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
+							print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 						elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))) and collisionCount > 0):
 							#print ("Collision occured " + str(collisionCount))
 							#print "Resolve collsion"
@@ -259,6 +259,7 @@ for a in range (2,5):
 			lastPacketTime = 0
 			AggregateDelayTime = 0
 			lastPacketCreationTime = 0
+			totalNumberOfPacket = 0
 
 
 			while True:
