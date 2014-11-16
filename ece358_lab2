@@ -120,14 +120,19 @@ for z in range (5,6):
 			# Calculating possible collisions
 			while (totalNumberOfPacket > 0):
 				currentPacket = heap.heappop(packetHeap)
-
+				if (lastPacketTime > 1):
+					break
 				#Non-Persistent CSMA/CD
 				if (P == 1):
 					#pdb.set_trace()
 					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W + 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))):
-						print ("Medium busy " + str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
+						#print ("Medium busy " + str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 						#pdb.set_trace()
-						currentPacket.packetTime += random.uniform(0, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
+						randomNumber = random.uniform(0.0001, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
+						#if (randomNumber  == 0):
+						#	print "WTF"
+						currentPacket.packetTime += randomNumber
+						currentPacket.packetTime += 0.0001
 						heap.heappush(packetHeap, currentPacket)
 						heap.heapify(packetHeap)
 					else: 
@@ -158,7 +163,7 @@ for z in range (5,6):
 							AggregateCollisionCount += collisionCount
 							collisionCount = 0
 						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
-							print "Packet successfully delivered"
+							print "Packet successfully delivered " + str(packetThroughPut)
 							LANUsers[currentPacket.user].backoffCounter = 0
 							currentPacket.deletionTime = currentPacket.packetTime
 							packetThroughPut += 1
