@@ -11,9 +11,9 @@ A = 5 			#Data packets arrive at the MAC layer following a Poisson process with 
 W = 1000000.00		#The speed of the LAN (fixed)
 L = 1500*8   	#Packet length (fixed)
 global P
-P = 2 			#Persistence parameter for P-persistent CSMA protocols
+P = 1 			#Persistence parameter for P-persistent CSMA protocols
 timeFactor = 1 #Time scale 
-simTime =  5 #in seconds
+simTime =  10 #in seconds
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
@@ -75,7 +75,7 @@ def resolveCollision (collisions, counter):
 		if(LANUsers[collisions[0].user].backoffCounter < kMax):
 			LANUsers[collisions[0].user].backoffCounter += 1
 			randomBackoffperiod = random.uniform(0, pow(2,LANUsers[collisions[0].user].backoffCounter)-1)*timeFactor*512/W
-			delayPacket = packet (collisions[0].packetTime + randomBackoffperiod, LANUsers[collisions[0].user].userID)
+			delayPacket = packet (collisions[0].packetTime + randomBackoffperiod, LANUsers[collisions[0].user].userID, collisions[0].insertTime)
 			#print "Random backoff for "+ str(LANUsers[collisions[0].user].userID) +" "+ str(randomBackoffperiod) + " new packet time " + str(delayPacket.packetTime)
 			heap.heappush(packetHeap, delayPacket)
 			heap.heapify(packetHeap)
@@ -155,7 +155,7 @@ for a in range (2,5):
 							else:
 								print "From different user"
 								if(collisionCount == 0):
-									previousPacket = packet (lastPacketTime, lastSender)
+									previousPacket = packet (lastPacketTime, lastSender, lastPacketCreationTime)
 									collisionList.append(previousPacket)
 								collisionList.append(currentPacket)
 								collisionCount += 1
@@ -176,6 +176,7 @@ for a in range (2,5):
 						if (currentPacket.user != lastSender):
 							lastPacketTime = currentPacket.packetTime
 							lastSender = currentPacket.user
+							lastPacketCreationTime = currentPacket.insertTime
 
 				#P-persistent CSMA/CD
 				if (P == 2):
@@ -240,9 +241,9 @@ for a in range (2,5):
 
 
 			if (packetThroughPut != 0):
-				print " Data packet per second: " +str(z) + " Number of users: " + str(a) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
+				print " Number of users: " + str(a*10) + " Data packet per second: " +str(z*4) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
 				with open ("data.txt", "a") as testfile:
-					testfile.write (str(z) + " " + str(a) + " " + str(packetThroughPut) + " " + str(AggregateDelayTime/packetThroughPut) + " " + str(AggregateCollisionCount) + " " + str(AggregatePacketCount)+ "\n")
+					testfile.write (str(a*10) + " " + str(z*4) + " " + str(packetThroughPut) + " " + str(AggregateDelayTime/packetThroughPut) + " " + str(AggregateCollisionCount) + " " + str(AggregatePacketCount)+ "\n")
 			else:
 				pdb.set_trace()
 				y-=1
@@ -255,6 +256,7 @@ for a in range (2,5):
 			AggregatePacketCount = 0
 			AggregateErrorCount = 0
 			lastPacketTime = 0
+			AggregateDelayTime = 0
 
 			while True:
 				try:
