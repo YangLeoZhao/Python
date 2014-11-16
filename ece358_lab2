@@ -12,8 +12,8 @@ W = 1000000		#The speed of the LAN (fixed)
 L = 1500*8   	#Packet length (fixed)
 global P
 P = 1 			#Persistence parameter for P-persistent CSMA protocols
-timeFactor = 1000000000 #Time scale 
-simTime =  60 #in seconds
+timeFactor = 1 #Time scale 
+simTime =  10 #in seconds
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
@@ -42,16 +42,15 @@ def poissonDistribution(z):
 	if (packetperSecond == 0):
 		return 0
 	else:
-		return 1/packetperSecond*timeFactor
+		return 1*timeFactor/packetperSecond
 
 class users:
 	def __init__(self, userID, lastPacket= 0):
 		self.userID = userID
 		self.queue = deque ()
 		self.lastPacket = lastPacket
-		self.backoffCounter = 0
+		self.backoffCounter = 1
 		self.medium = 0
-		self.mediumCountdown = 96/W*timeFactor
 
 class packet:
 	def __init__ (self, packetTime, user, insertTime = 0, deletionTime = 0):
@@ -125,7 +124,7 @@ for z in range (5,8):
 
 				#Non-Persistent CSMA/CD
 				if (P == 1):
-					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentSender - lastSender)*10/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
+					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W + 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))):
 						#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
 						currentPacket.packetTime += random.uniform(0, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
 						heap.heappush(packetHeap, currentPacket)
@@ -133,10 +132,10 @@ for z in range (5,8):
 					else: 
 						#A group of collisions
 						#print " "+str(currentPacket.packetTime) + " " + str(currentPacket.user)
-						if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))):
+						if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))):
 							#if the conflicting packets are between the same user then delay the 2nd packet by the minimal busy time
 							if(currentPacket.user == lastSender):
-								delayCurrentPacket = packet (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))+1, currentPacket.user)
+								delayCurrentPacket = packet (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))+1, currentPacket.user)
 								heap.heappush(packetHeap, delayCurrentPacket)
 								heap.heapify(packetHeap)
 							#if the conflicting packets are between different users
@@ -147,12 +146,12 @@ for z in range (5,8):
 								collisionList.append(currentPacket)
 								collisionCount += 1
 							#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
-						elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and collisionCount > 0):
+						elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))) and collisionCount > 0):
 							#print ("Collision occured " + str(collisionCount))
 							resolveCollision(collisionList, collisionCount)
 							AggregateCollisionCount += collisionCount
 							collisionCount = 0
-						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
+						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
 							LANUsers[currentPacket.user].backoffCounter = 0
 							currentPacket.deletionTime = currentPacket.packetTime
 							packetThroughPut += 1
@@ -161,11 +160,13 @@ for z in range (5,8):
 							lastPacketTime = currentPacket.packetTime
 							lastSender = currentPacket.user
 
-			print " Data packet per second: " +str(z) + " Number of users: " + str(a) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
-
-			with open ("data.txt", "a") as testfile:
-				testfile.write (str(z) + " " + str(a) + " " + str(packetThroughPut) + " " + str(AggregateDelayTime/packetThroughPut) + " " + str(AggregateCollisionCount) + " " + str(AggregatePacketCount)+ "\n")
-
+			if (packetThroughPut != 0):
+				print " Data packet per second: " +str(z) + " Number of users: " + str(a) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
+				with open ("data.txt", "a") as testfile:
+					testfile.write (str(z) + " " + str(a) + " " + str(packetThroughPut) + " " + str(AggregateDelayTime/packetThroughPut) + " " + str(AggregateCollisionCount) + " " + str(AggregatePacketCount)+ "\n")
+			else:
+				pdb.set_trace()
+				y-=1
 
 			LANUsers.clear()
 			print "User deletion done."
