@@ -13,7 +13,7 @@ L = 1500*8   	#Packet length (fixed)
 global P
 P = 2 			#Persistence parameter for P-persistent CSMA protocols
 timeFactor = 1 #Time scale 
-simTime =  1 #in seconds
+simTime =  5 #in seconds
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
@@ -84,14 +84,14 @@ def resolveCollision (collisions, counter):
 			AggregateErrorCount += 1
 		collisions.pop(0)
 
-#A value
-for z in range (5,6):
-	#N value
-	for a in range (5,6):
+#N value
+for a in range (2,5):
+	#A value
+	for z in range (1,6):
 		#each test run 5 times
-		for y in range (0,1):
+		for y in range (0,10):
 			#Initializing the users
-			for x in range (0, a*20+1):
+			for x in range (0, a*10+1):
 				LANUsers[x] = users (x)
 			print "User generation done."
 
@@ -102,7 +102,7 @@ for z in range (5,6):
 			for x in range (0, len(LANUsers)):
 				condition = len(LANUsers)
 				while LANUsers[x].lastPacket < (simTime * timeFactor):
-					timeBuffer = poissonDistribution(z)
+					timeBuffer = poissonDistribution(z*4)
 					if (timeBuffer != 0):
 						LANUsers[x].lastPacket += timeBuffer
 						if (LANUsers[x].lastPacket < (simTime * timeFactor)):
