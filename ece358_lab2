@@ -8,17 +8,18 @@ from collections import deque
 #variable declaration
 N = 20 			#N: the number of computers connected to the LAN (variable) 20,40,60,80,100
 A = 5 			#Data packets arrive at the MAC layer following a Poisson process with an average arrival rate of A packets /second (variable)
-W = 1000000		#The speed of the LAN (fixed)
+W = 1000000.00		#The speed of the LAN (fixed)
 L = 1500*8   	#Packet length (fixed)
 global P
 P = 1 			#Persistence parameter for P-persistent CSMA protocols
 timeFactor = 1 #Time scale 
-simTime =  10 #in seconds
+simTime =  1 #in seconds
 packetperSecond = 0
 totalNumberOfPacket = 0
 collisionCount = 0
 kMax = 10
 randomBackoffperiod = 0
+probability = 0
 
 packetThroughPut = 0
 AggregateCollisionCount = 0
@@ -29,7 +30,6 @@ AggregateDelayTime = 0
 lastPacketTime = 0
 currentPacket = 0
 lastSender = 0
-currentSender = 0
 
 
 # Presistency = {}
@@ -82,11 +82,11 @@ def resolveCollision (collisions, counter):
 		collisions.pop(0)
 
 #A value
-for z in range (5,8):
+for z in range (5,6):
 	#N value
-	for a in range (1,6):
+	for a in range (1,2):
 		#each test run 5 times
-		for y in range (0,5):
+		for y in range (0,1):
 			#Initializing the users
 			for x in range (0, a*20+1):
 				LANUsers[x] = users (x)
@@ -120,45 +120,60 @@ for z in range (5,8):
 			# Calculating possible collisions
 			while (totalNumberOfPacket > 0):
 				currentPacket = heap.heappop(packetHeap)
-				totalNumberOfPacket -= 1
 
 				#Non-Persistent CSMA/CD
 				if (P == 1):
-					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W + 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))):
-						#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
+					#pdb.set_trace()
+					if (abs(currentPacket.packetTime - lastPacketTime) > (abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8))) and abs(currentPacket.packetTime - lastPacketTime) < (L*timeFactor/W + 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))):
+						print ("Medium busy " + str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
+						#pdb.set_trace()
 						currentPacket.packetTime += random.uniform(0, pow(2,LANUsers[currentPacket.user].backoffCounter)-1)*timeFactor*512/W
 						heap.heappush(packetHeap, currentPacket)
 						heap.heapify(packetHeap)
 					else: 
+						print "Medium not busy"
 						#A group of collisions
 						#print " "+str(currentPacket.packetTime) + " " + str(currentPacket.user)
-						if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))):
+						if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))):
 							#if the conflicting packets are between the same user then delay the 2nd packet by the minimal busy time
+							print "Collision "+str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender)
 							if(currentPacket.user == lastSender):
-								delayCurrentPacket = packet (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))+1, currentPacket.user)
+								print "From same user"
+								delayCurrentPacket = packet (lastPacketTime + (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))+1, currentPacket.user)
 								heap.heappush(packetHeap, delayCurrentPacket)
 								heap.heapify(packetHeap)
 							#if the conflicting packets are between different users
 							else:
+								print "From different user"
 								if(collisionCount == 0):
 									previousPacket = packet (lastPacketTime, lastSender)
 									collisionList.append(previousPacket)
 								collisionList.append(currentPacket)
 								collisionCount += 1
 							#print (str(currentPacket.packetTime) + " " + str(currentPacket.user) + " " + str(lastPacketTime) + " " + str(lastSender))
-						elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))) and collisionCount > 0):
+						elif ((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))) and collisionCount > 0):
 							#print ("Collision occured " + str(collisionCount))
+							print "Resolve collsion"
 							resolveCollision(collisionList, collisionCount)
 							AggregateCollisionCount += collisionCount
 							collisionCount = 0
-						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentSender - lastSender)*10*timeFactor/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
+						elif((abs(currentPacket.packetTime - lastPacketTime) > (L*timeFactor/W+ 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))) and (currentPacket.packetTime < simTime * timeFactor)):
+							print "Packet successfully delivered"
 							LANUsers[currentPacket.user].backoffCounter = 0
 							currentPacket.deletionTime = currentPacket.packetTime
 							packetThroughPut += 1
+							totalNumberOfPacket -= 1
 							AggregateDelayTime += currentPacket.deletionTime - currentPacket.insertTime
 						if (currentPacket.user != lastSender):
 							lastPacketTime = currentPacket.packetTime
 							lastSender = currentPacket.user
+
+				#P-persistent CSMA/CD
+				if (P == 2):
+					if (abs(currentPacket.packetTime - lastPacketTime) <= (L*timeFactor/W + 96*timeFactor/W + abs(currentPacket.user - lastSender)*10.0*timeFactor/(2*pow(10,8)))):
+						probability = random.uniform (0,1)
+
+
 
 			if (packetThroughPut != 0):
 				print " Data packet per second: " +str(z) + " Number of users: " + str(a) + " Packet Throughput: "+str(packetThroughPut) + " Average Delay: "+str(AggregateDelayTime/packetThroughPut) + " Total packet created: " + str (AggregatePacketCount) + " Collision#: " + str(AggregateCollisionCount) + " Errors : " + str(AggregateErrorCount)
